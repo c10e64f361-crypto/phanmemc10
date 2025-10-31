@@ -1,9 +1,12 @@
 // src/components/CourseCard.js
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const CourseCard = ({ course }) => {
   return (
-    <div className="bg-white rounded-lg shadow hover:shadow-lg transition-all duration-300 overflow-hidden">
+    <Link to={`/courses/${course.id}`}>
+      <div className="course-card">
+       <div className="bg-white rounded-lg shadow hover:shadow-lg transition-all duration-300 overflow-hidden">
       {/* Ảnh khóa học */}
       <div className="relative h-40 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700">
         <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs font-medium px-2 py-1 rounded-full">
@@ -42,7 +45,11 @@ const CourseCard = ({ course }) => {
         </button>
       </div>
     </div>
+       
+      </div>
+    </Link>
   );
 };
+
 
 export default CourseCard;

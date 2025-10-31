@@ -1,49 +1,56 @@
 // src/components/admin/AdminSidebar.js
-import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Book, Users, Award, LogOut } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { 
+  Home, BookOpen, FileText, Users, BarChart3, Award, Settings, 
+  FileQuestion, Calendar, LogOut 
+} from 'lucide-react';
 
 const AdminSidebar = () => {
   const location = useLocation();
-  const { logout } = useAuth();
 
-  const menu = [
-    { label: 'Dashboard', path: '/admin', icon: Home },
-    { label: 'Khóa học', path: '/admin/courses', icon: Book },
-    { label: 'Người dùng', path: '/admin/users', icon: Users },
-    { label: 'Chứng chỉ', path: '/admin/certificates', icon: Award },
+  const menuItems = [
+    { icon: Home, label: 'Dashboard', path: '/admin' },
+    { icon: BookOpen, label: 'Khóa học', path: '/admin/courses' },
+    { icon: FileText, label: 'Kỳ thi', path: '/admin/exams' },
+    { icon: Calendar, label: 'Lịch thi', path: '/admin/schedule' },
+    { icon: FileQuestion, label: 'Ngân hàng câu hỏi', path: '/admin/questions' },
+    { icon: Users, label: 'Học viên', path: '/admin/users' },
+    { icon: BarChart3, label: 'Báo cáo', path: '/admin/reports' },
+    { icon: Award, label: 'Chứng chỉ', path: '/admin/certificates' },
+    { icon: Settings, label: 'Cài đặt', path: '/admin/settings' },
   ];
 
   return (
-    <div className="fixed inset-y-0 left-0 w-64 bg-blue-900 text-white">
-      <div className="p-6 border-b border-blue-800">
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          <Award className="w-6 h-6" />
-          ADMIN QLMS
-        </h2>
+    <div className="w-64 bg-blue-900 text-white min-h-screen p-4 fixed left-0 top-0 bottom-0 overflow-y-auto">
+      <div className="mb-8">
+        <h2 className="text-xl font-bold text-center">LMS QUỐC PHÒNG</h2>
       </div>
-      <nav className="mt-6">
-        {menu.map(item => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={`flex items-center gap-3 px-6 py-3 hover:bg-blue-800 transition ${
-              location.pathname === item.path ? 'bg-blue-800 border-l-4 border-yellow-400' : ''
-            }`}
-          >
-            <item.icon className="w-5 h-5" />
-            {item.label}
-          </Link>
-        ))}
-        <button
-          onClick={logout}
-          className="flex items-center gap-3 px-6 py-3 hover:bg-red-800 w-full text-left transition mt-auto"
-        >
-          <LogOut className="w-5 h-5" />
-          Đăng xuất
-        </button>
+      <nav className="space-y-1">
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = location.pathname === item.path;
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
+                isActive 
+                  ? 'bg-blue-700 text-white shadow-md' 
+                  : 'text-blue-200 hover:bg-blue-800'
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
       </nav>
+      <div className="mt-auto pt-8">
+        <button className="flex items-center gap-3 px-4 py-3 text-red-300 hover:bg-blue-800 rounded-lg w-full">
+          <LogOut className="w-5 h-5" />
+          <span>Đăng xuất</span>
+        </button>
+      </div>
     </div>
   );
 };

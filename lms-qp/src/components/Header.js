@@ -1,17 +1,18 @@
 // src/components/Header.js
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogOut, Shield, Home, Book, Calendar, Library, UserCheck, FileText, Settings } from 'lucide-react';
 
 const Header = () => {
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth(); // ← DÙNG logout từ AuthContext
 
-  // === DEBUG: Log user ra console ===
+  // === DEBUG: Log user ===
   React.useEffect(() => {
     if (user) {
-      console.log('HEADER DEBUG - USER HIỆN TẠI:', user);
+      console.log('HEADER DEBUG - USER:', user);
     }
   }, [user]);
 
@@ -31,6 +32,12 @@ const Header = () => {
     { path: '/certificates', label: 'Chứng chỉ', icon: FileText },
   ];
 
+  // Hàm logout tùy chỉnh (gọi logout() + chuyển trang)
+  const handleLogout = () => {
+    logout(); // Xóa localStorage + setUser(null)
+    navigate('/login', { replace: true }); // Chuyển về login
+  };
+
   return (
     <header className="bg-gradient-to-r from-blue-900 to-blue-700 text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4">
@@ -45,25 +52,25 @@ const Header = () => {
               onError={(e) => { e.target.style.display = 'none'; }}
             />
             <div>
-              <div className="text-xl font-bold tracking-wider">BỘ QUỐC PHÒNG</div>
+              <div className="text-xl font-bold tracking-wider">BAN THAM MƯU</div>
               <div className="text-xs opacity-90">HỆ THỐNG QUẢN LÝ ĐÀO TẠO</div>
             </div>
           </div>
 
-          {/* === THÔNG TIN NGƯỜI DÙNG + ROLE (DEBUG) === */}
+          {/* === THÔNG TIN NGƯỜI DÙNG + LOGOUT === */}
           <div className="flex items-center gap-4">
 
-            {/* DEBUG ROLE */}
+            {/* DEBUG ROLE + TÊN */}
             <div className="hidden md:flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium">
-              <Shield className={`w-4 h-4 ${user.role === 'admin' ? 'text-yellow-400' : 'text-cyan-300'}`} />
-              <span className={user.role === 'admin' ? 'text-yellow-300' : 'text-cyan-200'}>
+              <Shield className={`w-4 h-4 ${user.role === 'Quản trị viên' ? 'text-yellow-400' : 'text-cyan-300'}`} />
+              <span className={user.role === 'Quản trị viên' ? 'text-yellow-300' : 'text-cyan-200'}>
                 {user.role.toUpperCase()}
               </span>
-              <span className="text-white/80">• {user.name || user.cccd}</span>
+              <span className="text-white/80">• {user.fullName || user.cccd}</span>
             </div>
 
             {/* NÚT QUẢN TRỊ (chỉ Admin) */}
-            {user.role === 'admin' && (
+            {user.role === 'Quản trị viên' && (
               <Link
                 to="/admin"
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
@@ -79,7 +86,7 @@ const Header = () => {
 
             {/* ĐĂNG XUẤT */}
             <button
-              onClick={logout}
+              onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition font-medium"
             >
               <LogOut className="w-4 h-4" />
@@ -88,8 +95,8 @@ const Header = () => {
           </div>
         </div>
 
-        {/* === MENU NGANG (chỉ user) === */}
-        {user.role !== 'admin' && (
+        {/* === MENU NGANG (chỉ user, không phải admin) === */}
+        {user.role !== 'Quản trị viên' && (
           <nav className="flex gap-1 pb-2 overflow-x-auto scrollbar-hide">
             {userMenu.map(item => (
               <Link

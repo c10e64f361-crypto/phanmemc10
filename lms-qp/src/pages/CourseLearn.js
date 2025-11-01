@@ -1,6 +1,7 @@
 // src/pages/CourseLearn.js
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import LearnSidebar from '../components/LearnSidebar';
@@ -10,11 +11,6 @@ import ExerciseList from '../components/ExerciseList';
 import LearningResults from '../components/LearningResults';
 import DiscussionForum from '../components/DiscussionForum';
 import Announcements from '../components/Announcements';
-import { lessons } from '../data/lessons';
-import { exercises as initialExercises } from '../data/exercises';
-import { learningResults } from '../data/learningResults';
-import { discussions as initialDiscussions } from '../data/discussions';
-import { announcements as initialAnnouncements } from '../data/announcements';
 import { ArrowLeft, Users, MessageCircle } from 'lucide-react';
 
 const CourseLearn = () => {
@@ -22,46 +18,58 @@ const CourseLearn = () => {
   const navigate = useNavigate();
 
   // State
-  const [currentLesson, setCurrentLesson] = useState(null);
+  const [course, setCourse] = useState(null);
+  const [chapters, setChapters] = useState([]);
+  const [currentChapter, setCurrentChapter] = useState(null);
   const [activeTab, setActiveTab] = useState('content');
-  const [exercises, setExercises] = useState(initialExercises);
-  const [results] = useState(learningResults);
-  const [discussions] = useState(initialDiscussions);
-  const [announcements, setAnnouncements] = useState(initialAnnouncements);
+  const [loading, setLoading] = useState(true);
 
-  // Khởi tạo bài học đầu tiên
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+  // LẤY KHÓA HỌC + CHƯƠNG
   useEffect(() => {
-    const firstAvailable = lessons
-      .flatMap(l => l.children || [l])
-      .find(c => c.status !== 'locked');
-    setCurrentLesson(firstAvailable || lessons[0]);
-  }, []);
+    const token = localStorage.getItem('token');
 
-  // Xử lý chọn bài học
-  const handleLessonClick = (lesson) => {
-    if (lesson.status !== 'locked') {
-      setCurrentLesson(lesson);
-      setActiveTab('content'); // Quay lại tab nội dung khi chọn video
-    }
+    // Lấy khóa học
+    axios.get(`${API_URL}/api/courses/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      setCourse(res.data.data);
+      
+      // Lấy chương
+      return axios.get(`${API_URL}/api/courses/${id}/chapters`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    })
+    .then(res => {
+      const fetchedChapters = res.data.data;
+      setChapters(fetchedChapters);
+      setCurrentChapter(fetchedChapters[0] || null);
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error('Lỗi tải dữ liệu:', err);
+      setLoading(false);
+    });
+  }, [id]);
+
+  const handleChapterClick = (chapter) => {
+    setCurrentChapter(chapter);
+    setActiveTab('content');
   };
 
-  // Nộp bài tập
-  const handleSubmitExercise = (exerciseId, filename) => {
-    setExercises(prev =>
-      prev.map(ex =>
-        ex.id === exerciseId
-          ? { ...ex, status: 'đã nộp', file: filename }
-          : ex
-      )
+  if (loading) {
+    return (
+      <div className="p-6 flex justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      </div>
     );
-  };
+  }
 
-  // Đánh dấu thông báo đã đọc
-  const handleMarkRead = (annId) => {
-    setAnnouncements(prev =>
-      prev.map(a => (a.id === annId ? { ...a, read: true } : a))
-    );
-  };
+  if (!course) {
+    return <div className="p-6 text-center">Không tìm thấy khóa học</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -72,14 +80,14 @@ const CourseLearn = () => {
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate(`/courses/${id}`)}
+              onClick={() => navigate(-1)}
               className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition"
             >
               <ArrowLeft className="w-5 h-5" />
               Quay lại
             </button>
             <h1 className="text-xl font-bold text-blue-900">
-              Kiến thức về công nghệ số
+              {course.title}
             </h1>
           </div>
           <div className="flex gap-3">
@@ -99,9 +107,9 @@ const CourseLearn = () => {
       <div className="flex-1 flex">
         {/* Sidebar - Danh sách chương */}
         <LearnSidebar
-          lessons={lessons}
-          currentLesson={currentLesson}
-          onLessonClick={handleLessonClick}
+          chapters={chapters}
+          currentChapter={currentChapter}
+          onChapterClick={handleChapterClick}
         />
 
         {/* Main Area */}
@@ -114,13 +122,20 @@ const CourseLearn = () => {
             <div className="max-w-7xl mx-auto">
 
               {/* TAB: NỘI DUNG */}
-              {activeTab === 'content' && currentLesson && (
+              {activeTab === 'content' && currentChapter && (
                 <div>
-                  <h2 className="text-2xl font-bold mb-6">{currentLesson.title}</h2>
-                  <LearnVideo
-                    videoUrl="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                    title={currentLesson.title}
-                  />
+                  <h2 className="text-2xl font-bold mb-6">{currentChapter.title}</h2>
+                  {currentChapter.video_url ? (
+                    <LearnVideo
+                      videoUrl={`${API_URL}${currentChapter.video_url}`}
+                      title={currentChapter.title}
+                    />
+                  ) : (
+                    <p className="text-gray-500">Chưa có video</p>
+                  )}
+                  <div className="mt-6 prose max-w-none">
+                    <p>{currentChapter.description}</p>
+                  </div>
                 </div>
               )}
 
@@ -128,10 +143,7 @@ const CourseLearn = () => {
               {activeTab === 'exercise' && (
                 <div>
                   <h2 className="text-2xl font-bold mb-6">Bài tập</h2>
-                  <ExerciseList
-                    exercises={exercises}
-                    onSubmit={handleSubmitExercise}
-                  />
+                  <ExerciseList courseId={id} />
                 </div>
               )}
 
@@ -139,7 +151,7 @@ const CourseLearn = () => {
               {activeTab === 'results' && (
                 <div>
                   <h2 className="text-2xl font-bold mb-6">Kết quả học tập</h2>
-                  <LearningResults results={results} />
+                  <LearningResults courseId={id} />
                 </div>
               )}
 
@@ -147,7 +159,7 @@ const CourseLearn = () => {
               {activeTab === 'discussion' && (
                 <div>
                   <h2 className="text-2xl font-bold mb-6">Thảo luận</h2>
-                  <DiscussionForum discussions={discussions} />
+                  <DiscussionForum courseId={id} />
                 </div>
               )}
 
@@ -155,10 +167,7 @@ const CourseLearn = () => {
               {activeTab === 'announcement' && (
                 <div>
                   <h2 className="text-2xl font-bold mb-6">Thông báo</h2>
-                  <Announcements
-                    announcements={announcements}
-                    onMarkRead={handleMarkRead}
-                  />
+                  <Announcements courseId={id} />
                 </div>
               )}
 

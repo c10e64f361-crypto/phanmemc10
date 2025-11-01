@@ -35,7 +35,7 @@ import UserManagement from './pages/admin/UserManagement';
 import Reports from './pages/admin/Reports';
 import Dashboard from './pages/admin/Dashboard';
 import AdminLayout from './layouts/AdminLayout';
-
+import EditCourse from './pages/admin/EditCourse';
 // import Certificates from './pages/admin/Certificates';
 // === ROUTE GUARDS ===
 import ProtectedRoute from './components/ProtectedRoute';
@@ -101,6 +101,10 @@ function App() {
             <Route path="/admin/users" element={<UserManagement />} />
             <Route path="/admin/reports" element={<Reports />} />
             <Route path="/admin/certificates" element={<Certificates />} />
+            <Route path="/admin/courses/:id/edit" element={<EditCourse />} />
+            
+<Route path="/admin/courses/:id/chapters" element={<CourseChapters />} />
+
           </Route>
         </Route>
 
@@ -116,3 +120,5 @@ function App() {
 }
 
 export default App;
+// CREATE USER 'lms_user'@'localhost' IDENTIFIED BY 'lms_password_2025';
+// https://order.taikhoantenhat.com/d518d8ad | Hướng dẫn đăng nhập: https://huongdan.taikhoantenhat.com/huong-dan-su-dung/huong-dan-dang-nhap-va-su-dung-super-grok | Quý khách chỉ đăng nhập và sử dụng 02 thiết bị

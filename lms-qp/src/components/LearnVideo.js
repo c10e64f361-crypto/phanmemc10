@@ -1,17 +1,18 @@
 // src/components/LearnVideo.js
 import React from 'react';
 
+// src/components/LearnVideo.js
 const LearnVideo = ({ videoUrl, title }) => {
   return (
-    <div className="bg-black rounded-lg overflow-hidden shadow-2xl">
-      <iframe
-        src={videoUrl}
-        className="w-full h-96 md:h-full"
-        frameBorder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
+    <div className="aspect-video bg-black rounded-lg overflow-hidden mb-6">
+      <video 
+        src={videoUrl} 
+        controls 
+        className="w-full h-full"
         title={title}
-      />
+      >
+        Trình duyệt không hỗ trợ video.
+      </video>
     </div>
   );
 };

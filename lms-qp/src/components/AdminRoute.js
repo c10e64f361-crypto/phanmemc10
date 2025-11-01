@@ -5,7 +5,19 @@ import { useAuth } from '../context/AuthContext';
 
 const AdminRoute = () => {
   const { user } = useAuth();
-  return user && user.role === 'admin' ? <Outlet /> : <Navigate to="/login" />;
+
+  // Nếu chưa login → về login
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Nếu không phải Admin → về trang chủ
+  if (user.role !== 'Quản trị viên') {
+    return <Navigate to="/" replace />;
+  }
+
+  // OK → cho vào Admin
+  return <Outlet />;
 };
 
 export default AdminRoute;

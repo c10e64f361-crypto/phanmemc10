@@ -1,90 +1,111 @@
 // src/components/ExerciseList.js
-import React, { useState } from 'react';
-import { Upload, FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
-const ExerciseList = ({ exercises, onSubmit }) => {
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [submittingId, setSubmittingId] = useState(null);
+const ExerciseList = ({ courseId }) => {
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [score, setScore] = useState(0);
 
-  const handleFileChange = (e, id) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      handleSubmit(id, file);
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    axios.get(`${API_URL}/api/courses/${courseId}/questions/answers`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      const data = res.data.data;
+      setQuestions(data);
+      const initial = {};
+      let total = 0;
+      data.forEach(q => {
+        if (q.selected_answer) {
+          initial[q.id] = q.selected_answer;
+          if (q.is_correct) total++;
+        }
+      });
+      setAnswers(initial);
+      setSubmitted(data.some(q => q.selected_answer));
+      setScore(total);
+    });
+  }, [courseId]);
+
+  const handleAnswer = (qid, value) => {
+    setAnswers(prev => ({ ...prev, [qid]: value }));
+  };
+
+  const handleSubmit = async () => {
+    const token = localStorage.getItem('token');
+    for (const [qid, ans] of Object.entries(answers)) {
+      await axios.post(`${API_URL}/api/courses/${courseId}/questions/${qid}/submit`, {
+        selected_answer: ans
+      }, { headers: { Authorization: `Bearer ${token}` } });
     }
+    alert('Nộp bài thành công!');
+    setSubmitted(true);
+    window.location.reload();
   };
 
-  const handleSubmit = (id, file) => {
-    setSubmittingId(id);
-    setTimeout(() => {
-      onSubmit(id, file.name);
-      setSubmittingId(null);
-      setSelectedFile(null);
-    }, 1000);
-  };
-
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'chưa nộp': return <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">Chưa nộp</span>;
-      case 'đã nộp': return <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">Đã nộp</span>;
-      case 'đã chấm': return <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">Đã chấm</span>;
-      default: return null;
-    }
-  };
+  if (questions.length === 0) return <p className="text-center text-gray-500">Chưa có câu hỏi</p>;
 
   return (
     <div className="space-y-6">
-      {exercises.map(ex => (
-        <div key={ex.id} className="bg-white p-6 rounded-lg shadow-sm border">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h4 className="font-semibold text-lg">{ex.title}</h4>
-              <div className="flex items-center gap-4 text-sm text-gray-600 mt-2">
-                <div className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  Hạn nộp: {ex.deadline}
-                </div>
-                {getStatusBadge(ex.status)}
-              </div>
-            </div>
+      {questions.map((q, idx) => (
+        <div key={q.id} className="bg-white p-5 rounded-lg shadow">
+          <p className="font-medium mb-3">Câu {idx + 1}: {q.title}</p>
+          <div className="space-y-2">
+            {q.options.map((opt, i) => {
+              const letter = String.fromCharCode(65 + i);
+              const selected = answers[q.id] === letter;
+              const correct = q.correct_answer === letter;
+              const wrong = submitted && selected && !correct;
+
+              return (
+                <label
+                  key={i}
+                  className={`flex items-center gap-3 p-3 rounded border cursor-pointer
+                    ${selected ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}
+                    ${correct && submitted ? 'border-green-500 bg-green-50' : ''}
+                    ${wrong ? 'border-red-500 bg-red-50' : ''}
+                  `}
+                >
+                  <input
+                    type="radio"
+                    name={`q-${q.id}`}
+                    value={letter}
+                    checked={selected}
+                    onChange={() => handleAnswer(q.id, letter)}
+                    disabled={submitted}
+                    className="w-4 h-4"
+                  />
+                  <span>{opt}</span>
+                  {submitted && correct && <span className="text-green-600">✓</span>}
+                  {wrong && <span className="text-red-600">✗</span>}
+                </label>
+              );
+            })}
           </div>
-
-          {ex.status === 'đã nộp' && ex.score !== null && (
-            <div className="bg-green-50 p-4 rounded-lg mb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="font-medium">Điểm: {ex.score}/10</span>
-                </div>
-                {ex.feedback && <p className="text-sm text-green-700">{ex.feedback}</p>}
-              </div>
-            </div>
-          )}
-
-          {ex.status === 'chưa nộp' ? (
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700">
-                <Upload className="w-4 h-4" />
-                Nộp bài
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  className="hidden"
-                  onChange={(e) => handleFileChange(e, ex.id)}
-                />
-              </label>
-              {submittingId === ex.id && (
-                <span className="text-sm text-blue-600">Đang nộp...</span>
-              )}
-            </div>
-          ) : ex.status === 'đã nộp' ? (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <FileText className="w-4 h-4" />
-              Đã nộp: {ex.file}
-            </div>
-          ) : null}
         </div>
       ))}
+
+      {!submitted && Object.keys(answers).length === questions.length && (
+        <button
+          onClick={handleSubmit}
+          className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium"
+        >
+          Nộp bài
+        </button>
+      )}
+
+      {submitted && (
+        <div className="text-center p-4 bg-green-50 rounded-lg">
+          <p className="text-xl font-bold text-green-700">
+            Điểm: {score} / {questions.length}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

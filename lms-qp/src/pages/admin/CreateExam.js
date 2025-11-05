@@ -1,177 +1,202 @@
 // src/pages/admin/CreateExam.js
 import React, { useState } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { Calendar, Clock, Users, ArrowLeft } from 'lucide-react';
 
 const CreateExam = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     title: '',
-    startTime: '',
-    endTime: '',
-    duration: '',
-    questions: []
+    description: '',
+    start_time: '',
+    end_time: '',
+    duration: 120,
+    max_attempts: 1,
+    scoring_method: 'Cao nhất'
   });
+  const [errors, setErrors] = useState({});
 
-  const [currentQ, setCurrentQ] = useState({ text: '', options: ['', '', '', ''], correct: 0 });
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-  const addQuestion = () => {
-    if (currentQ.text && currentQ.options.every(o => o)) {
-      setForm(prev => ({
-        ...prev,
-        questions: [...prev.questions, { ...currentQ, id: Date.now() }]
-      }));
-      setCurrentQ({ text: '', options: ['', '', '', ''], correct: 0 });
+  const validate = () => {
+    const newErrors = {};
+    if (!form.title.trim()) newErrors.title = 'Tên kỳ thi không được để trống';
+    if (!form.start_time) newErrors.start_time = 'Chọn thời gian bắt đầu';
+    if (!form.end_time) newErrors.end_time = 'Chọn thời gian kết thúc';
+    if (new Date(form.end_time) <= new Date(form.start_time)) {
+      newErrors.end_time = 'Thời gian kết thúc phải sau thời gian bắt đầu';
     }
+    if (form.duration < 30) newErrors.duration = 'Thời lượng ít nhất 30 phút';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (form.questions.length === 0) {
-      alert('Vui lòng thêm ít nhất 1 câu hỏi!');
-      return;
+    if (!validate()) return;
+
+    const token = localStorage.getItem('token');
+    try {
+      await axios.post(`${API_URL}/api/exams`, form, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('Tạo kỳ thi thành công!');
+      navigate('/admin/exams');
+    } catch (err) {
+      alert('Tạo kỳ thi thất bại');
     }
-    alert('Tạo kỳ thi thành công!');
-    navigate('/admin/exams');
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-6"
-      >
-        <ArrowLeft className="w-5 h-5" />
-        Quay lại
-      </button>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-3xl mx-auto">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-6"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Quay lại
+        </button>
 
-      <h1 className="text-2xl font-bold text-blue-900 mb-6">Tạo kỳ thi mới</h1>
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <h1 className="text-2xl font-bold text-blue-900 mb-8">Tạo kỳ thi mới</h1>
 
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-sm border space-y-6">
-        {/* Thông tin kỳ thi */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block font-medium mb-1">Tên kỳ thi</label>
-            <input
-              type="text"
-              required
-              value={form.title}
-              onChange={e => setForm(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full p-3 border rounded-lg"
-            />
-          </div>
-          <div>
-            <label className="block font-medium mb-1">Thời lượng (phút)</label>
-            <input
-              type="number"
-              required
-              min="1"
-              value={form.duration}
-              onChange={e => setForm(prev => ({ ...prev, duration: e.target.value }))}
-              className="w-full p-3 border rounded-lg"
-            />
-          </div>
-        </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* TÊN KỲ THI */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tên kỳ thi <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                  errors.title ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="VD: Kỳ thi chuyển đổi số 2025"
+              />
+              {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
+            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block font-medium mb-1">Thời gian bắt đầu</label>
-            <input
-              type="datetime-local"
-              required
-              value={form.startTime}
-              onChange={e => setForm(prev => ({ ...prev, startTime: e.target.value }))}
-              className="w-full p-3 border rounded-lg"
-            />
-          </div>
-          <div>
-            <label className="block font-medium mb-1">Thời gian kết thúc</label>
-            <input
-              type="datetime-local"
-              required
-              value={form.endTime}
-              onChange={e => setForm(prev => ({ ...prev, endTime: e.target.value }))}
-              className="w-full p-3 border rounded-lg"
-            />
-          </div>
-        </div>
+            {/* MÔ TẢ */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mô tả
+              </label>
+              <textarea
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                rows="3"
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 border-gray-300"
+                placeholder="Mô tả ngắn về kỳ thi..."
+              />
+            </div>
 
-        <hr />
-
-        {/* Thêm câu hỏi */}
-        <div>
-          <h3 className="font-semibold mb-4">Thêm câu hỏi</h3>
-          <div className="space-y-3">
-            <input
-              type="text"
-              placeholder="Nội dung câu hỏi"
-              value={currentQ.text}
-              onChange={e => setCurrentQ(prev => ({ ...prev, text: e.target.value }))}
-              className="w-full p-3 border rounded-lg"
-            />
-            {currentQ.options.map((opt, idx) => (
-              <div key={idx} className="flex items-center gap-2">
+            {/* THỜI GIAN */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Calendar className="inline w-4 h-4 mr-1" />
+                  Thời gian bắt đầu <span className="text-red-500">*</span>
+                </label>
                 <input
-                  type="radio"
-                  name="correct"
-                  checked={currentQ.correct === idx}
-                  onChange={() => setCurrentQ(prev => ({ ...prev, correct: idx }))}
+                  type="datetime-local"
+                  value={form.start_time}
+                  onChange={(e) => setForm({ ...form, start_time: e.target.value })}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                    errors.start_time ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 />
+                {errors.start_time && <p className="text-red-500 text-xs mt-1">{errors.start_time}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Thời gian kết thúc <span className="text-red-500">*</span>
+                </label>
                 <input
-                  type="text"
-                  placeholder={`Đáp án ${idx + 1}`}
-                  value={opt}
-                  onChange={e => {
-                    const newOpts = [...currentQ.options];
-                    newOpts[idx] = e.target.value;
-                    setCurrentQ(prev => ({ ...prev, options: newOpts }));
-                  }}
-                  className="flex-1 p-3 border rounded-lg"
+                  type="datetime-local"
+                  value={form.end_time}
+                  onChange={(e) => setForm({ ...form, end_time: e.target.value })}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                    errors.end_time ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.end_time && <p className="text-red-500 text-xs mt-1">{errors.end_time}</p>}
+              </div>
+            </div>
+
+            {/* THỜI LƯỢNG + SỐ LẦN THI */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Clock className="inline w-4 h-4 mr-1" />
+                  Thời lượng (phút) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  value={form.duration}
+                  onChange={(e) => setForm({ ...form, duration: e.target.value })}
+                  min="30"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                    errors.duration ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.duration && <p className="text-red-500 text-xs mt-1">{errors.duration}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Users className="inline w-4 h-4 mr-1" />
+                  Số lần thi tối đa
+                </label>
+                <input
+                  type="number"
+                  value={form.max_attempts}
+                  onChange={(e) => setForm({ ...form, max_attempts: e.target.value })}
+                  min="1"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 border-gray-300"
                 />
               </div>
-            ))}
-            <button
-              type="button"
-              onClick={addQuestion}
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
-            >
-              <Plus className="w-4 h-4" />
-              Thêm câu hỏi
-            </button>
-          </div>
-        </div>
+            </div>
 
-        {/* Danh sách câu hỏi đã thêm */}
-        {form.questions.length > 0 && (
-          <div className="border-t pt-4">
-            <p className="font-medium mb-2">Đã thêm {form.questions.length} câu hỏi:</p>
-            <ol className="space-y-2 text-sm">
-              {form.questions.map((q, i) => (
-                <li key={q.id} className="flex justify-between">
-                  <span>{i + 1}. {q.text}</span>
-                  <span className="text-green-600">Đáp án: {q.options[q.correct]}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
-        )}
+            {/* PHƯƠNG THỨC CHẤM */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Phương thức chấm điểm
+              </label>
+              <select
+                value={form.scoring_method}
+                onChange={(e) => setForm({ ...form, scoring_method: e.target.value })}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 border-gray-300"
+              >
+                <option value="Cao nhất">Cao nhất</option>
+                <option value="Trung bình">Trung bình</option>
+                <option value="Cuối cùng">Cuối cùng</option>
+              </select>
+            </div>
 
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="flex-1 px-6 py-3 border rounded-lg hover:bg-gray-50"
-          >
-            Hủy
-          </button>
-          <button
-            type="submit"
-            className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Tạo kỳ thi
-          </button>
+            {/* NÚT */}
+            <div className="flex gap-4 pt-6">
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="flex-1 border border-gray-300 px-6 py-3 rounded-lg hover:bg-gray-50 transition"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition"
+              >
+                Tạo kỳ thi
+              </button>
+            </div>
+          </form>
         </div>
-      </form>
+      </div>
     </div>
   );
 };

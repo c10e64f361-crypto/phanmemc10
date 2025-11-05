@@ -1,5 +1,6 @@
 // src/components/admin/AdminSidebar.js
-import { Link, useLocation } from 'react-router-dom';
+import React from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Home, BookOpen, FileText, Users, BarChart3, Award, Settings, 
   FileQuestion, Calendar, LogOut 
@@ -7,18 +8,27 @@ import {
 
 const AdminSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate(); // ← DÙNG ĐỂ ĐĂNG XUẤT
 
   const menuItems = [
     { icon: Home, label: 'Dashboard', path: '/admin' },
     { icon: BookOpen, label: 'Khóa học', path: '/admin/courses' },
     { icon: FileText, label: 'Kỳ thi', path: '/admin/exams' },
     { icon: Calendar, label: 'Lịch thi', path: '/admin/schedule' },
-    { icon: FileQuestion, label: 'Ngân hàng câu hỏi', path: '/admin/questions' },
+    { icon: FileQuestion, label: 'Ngân hàng câu hỏi', path: '/admin/question-bank' }, // ← SỬA ĐÚNG
     { icon: Users, label: 'Học viên', path: '/admin/users' },
     { icon: BarChart3, label: 'Báo cáo', path: '/admin/reports' },
     { icon: Award, label: 'Chứng chỉ', path: '/admin/certificates' },
     { icon: Settings, label: 'Cài đặt', path: '/admin/settings' },
   ];
+
+  const handleLogout = () => {
+    if (window.confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      navigate('/login');
+    }
+  };
 
   return (
     <div className="w-64 bg-blue-900 text-white min-h-screen p-4 fixed left-0 top-0 bottom-0 overflow-y-auto">
@@ -46,7 +56,10 @@ const AdminSidebar = () => {
         })}
       </nav>
       <div className="mt-auto pt-8">
-        <button className="flex items-center gap-3 px-4 py-3 text-red-300 hover:bg-blue-800 rounded-lg w-full">
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-4 py-3 text-red-300 hover:bg-blue-800 rounded-lg w-full transition"
+        >
           <LogOut className="w-5 h-5" />
           <span>Đăng xuất</span>
         </button>

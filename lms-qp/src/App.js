@@ -19,6 +19,7 @@ import ExamList from './pages/ExamList';
 import ExamDetail from './pages/ExamDetail';
 import ExamStart from './pages/ExamStart';
 import QuizExam from './pages/QuizExam';
+import ExamResult from './pages/ExamResult';
 // === ADMIN ===
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ManageCourses from './pages/admin/ManageCourses';
@@ -36,11 +37,15 @@ import Reports from './pages/admin/Reports';
 import Dashboard from './pages/admin/Dashboard';
 import AdminLayout from './layouts/AdminLayout';
 import EditCourse from './pages/admin/EditCourse';
+import UserDetail from './pages/admin/UserDetail';
+
 // import Certificates from './pages/admin/Certificates';
 // === ROUTE GUARDS ===
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import CourseChapters from './pages/admin/CourseChapters';
+
+import TakeExam from './pages/TakeExam';
 
 function App() {
   const { user } = useAuth();
@@ -76,19 +81,19 @@ function App() {
           <Route path="/courses/:id" element={<CourseDetail />} />
 
   <Route path="/courses/:id/learn" element={<CourseLearn />} />
-  <Route path="/exams" element={<ExamList />} />
-  <Route path="/exams/:id" element={<ExamDetail />} />
-
-  <Route path="/exams/:id/start" element={<ExamStart />} />
-
+<Route path="/exams" element={<Exams />} /> {/* Danh sách */}
+  <Route path="/exams/:examId" element={<ExamDetail />} /> {/* CHI TIẾT */}
+  <Route path="/exams/:examId/take" element={<TakeExam />} /> {/* LÀM BÀI */}
   <Route path="/exams/:id/quiz" element={<QuizExam />} />
-
+<Route path="/exams/:examId/result" element={<ExamResult />} />
         </Route>
 
         {/* === ADMIN PROTECTED ROUTES === */}
        {/* TẤT CẢ ADMIN DÙNG 1 LAYOUT */}
         <Route element={<AdminRoute />}>
           <Route element={<AdminLayout />}>
+          <Route path="/admin/users" element={<UserManagement />} />
+<Route path="/admin/users/:id" element={<UserDetail />} />
             <Route path="/admin" element={<Dashboard />} />
             <Route path="/admin/courses" element={<CoursesList />} />
             <Route path="/admin/courses/create" element={<CreateCourse />} />
@@ -96,14 +101,15 @@ function App() {
             <Route path="/admin/courses/:id/exercises" element={<CourseExercises />} />
             <Route path="/admin/exams" element={<ExamsList />} />
             <Route path="/admin/exams/create" element={<CreateExam />} />
-            <Route path="/admin/exams/:id/questions" element={<ExamQuestions />} />
+            {/* <Route path="/admin/exams/:id/questions" element={<ExamQuestions />} /> */}
             <Route path="/admin/questions" element={<QuestionBank />} />
             <Route path="/admin/users" element={<UserManagement />} />
             <Route path="/admin/reports" element={<Reports />} />
             <Route path="/admin/certificates" element={<Certificates />} />
             <Route path="/admin/courses/:id/edit" element={<EditCourse />} />
-            
+            <Route path="/admin/question-bank" element={<QuestionBank />} />
 <Route path="/admin/courses/:id/chapters" element={<CourseChapters />} />
+<Route path="/admin/exams/:examId/questions" element={<ExamQuestions />} />
 
           </Route>
         </Route>

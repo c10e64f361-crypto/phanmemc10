@@ -6,6 +6,7 @@ import { Trophy, Target, CheckCircle } from 'lucide-react';
 const LearningResults = ({ courseId }) => {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -15,13 +16,32 @@ const LearningResults = ({ courseId }) => {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(res => {
+      console.log('API results:', res.data); // ← DEBUG
       setResults(res.data.data);
       setLoading(false);
     })
-    .catch(() => setLoading(false));
+    .catch(err => {
+      console.error('Lỗi API:', err.response?.data || err);
+      setError('Không thể tải kết quả học tập');
+      setLoading(false);
+    });
   }, [courseId]);
 
-  if (loading) return <div className="text-center py-8">Đang tải...</div>;
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="text-center text-red-600 py-8">{error}</div>;
+  }
+
+  if (!results) {
+    return <div className="text-center text-gray-500 py-8">Chưa có dữ liệu học tập</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -50,10 +70,11 @@ const LearningResults = ({ courseId }) => {
           Tiến độ học tập
         </h3>
         <div>
-          <div className="flex justify-between mb-1">
-            <span className="text-sm font-medium">Hoàn thành chương</span>
-            <span className="text-sm">{results.completed_chapters} / {results.total_chapters}</span>
-          </div>
+
+<div className="flex justify-between mb-1">
+  <span className="text-sm font-medium">Hoàn thành chương</span>
+  <span className="text-sm">{results.completed_chapters} / {results.total_chapters}</span>
+</div>
           <div className="w-full bg-gray-200 rounded-full h-3">
             <div 
               className="bg-green-600 h-3 rounded-full transition-all"

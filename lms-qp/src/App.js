@@ -38,6 +38,8 @@ import Dashboard from './pages/admin/Dashboard';
 import AdminLayout from './layouts/AdminLayout';
 import EditCourse from './pages/admin/EditCourse';
 import UserDetail from './pages/admin/UserDetail';
+// App.js
+import AdminCertificates from './pages/admin/AdminCertificates';
 
 // import Certificates from './pages/admin/Certificates';
 // === ROUTE GUARDS ===
@@ -94,7 +96,6 @@ function App() {
           <Route element={<AdminLayout />}>
           <Route path="/admin/users" element={<UserManagement />} />
 <Route path="/admin/users/:id" element={<UserDetail />} />
-            <Route path="/admin" element={<Dashboard />} />
             <Route path="/admin/courses" element={<CoursesList />} />
             <Route path="/admin/courses/create" element={<CreateCourse />} />
             <Route path="/admin/courses/:id/chapters" element={<CourseChapters />} />
@@ -105,11 +106,14 @@ function App() {
             <Route path="/admin/questions" element={<QuestionBank />} />
             <Route path="/admin/users" element={<UserManagement />} />
             <Route path="/admin/reports" element={<Reports />} />
-            <Route path="/admin/certificates" element={<Certificates />} />
             <Route path="/admin/courses/:id/edit" element={<EditCourse />} />
             <Route path="/admin/question-bank" element={<QuestionBank />} />
 <Route path="/admin/courses/:id/chapters" element={<CourseChapters />} />
 <Route path="/admin/exams/:examId/questions" element={<ExamQuestions />} />
+<Route path="/admin/certificates" element={<AdminCertificates />} />
+
+
+<Route path="/admin" element={<Dashboard />} />
 
           </Route>
         </Route>

@@ -127,7 +127,7 @@ const CourseLearn = () => {
                   <h2 className="text-2xl font-bold mb-6">{currentChapter.title}</h2>
                   {currentChapter.video_url ? (
                     <LearnVideo
-                      videoUrl={`${API_URL}${currentChapter.video_url}`}
+                      videoUrl={`${currentChapter.video_url}`}
                       title={currentChapter.title}
                     />
                   ) : (

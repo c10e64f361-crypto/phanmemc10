@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, User, Mail, Calendar, Trophy, BookOpen, Award, 
-  Shield, AlertCircle 
+  Shield, AlertCircle, Download 
 } from 'lucide-react';
 
 const UserDetail = () => {
@@ -66,6 +66,19 @@ const UserDetail = () => {
     } catch (err) {
       alert(err.response?.data?.message || 'Cập nhật quyền thất bại');
     }
+  };
+
+  // TẢI CHỨNG CHỈ
+  const handleDownloadCertificate = (courseId) => {
+    const token = localStorage.getItem('token');
+    const url = `${API_URL}/api/certificate/${id}/${courseId}`;
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', '');
+    link.setAttribute('target', '_blank');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // MÀU THEO ROLE
@@ -210,7 +223,18 @@ const UserDetail = () => {
                 <div className="space-y-5">
                   {progress.map(p => (
                     <div key={p.course_id} className="bg-white p-6 rounded-xl shadow border">
-                      <h3 className="font-semibold text-lg mb-3">{p.course_title}</h3>
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="font-semibold text-lg">{p.course_title}</h3>
+                        {p.completion_percent === 100 && (
+                          <button
+                            onClick={() => handleDownloadCertificate(p.course_id)}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition"
+                          >
+                            <Download className="w-4 h-4" />
+                            Tải chứng chỉ
+                          </button>
+                        )}
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-3">
                         <div>
                           <p className="text-gray-600">Chương hoàn thành</p>

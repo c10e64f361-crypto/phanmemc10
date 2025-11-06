@@ -1,14 +1,57 @@
-// src/components/Pagination.js
+// components/Pagination.js
 import React from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const Pagination = () => {
+const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+  if (totalPages <= 1) return null;
+
+  const pages = [];
+  for (let i = 1; i <= totalPages; i++) {
+    pages.push(i);
+  }
+
   return (
-    <div className="flex justify-center items-center gap-2 mt-8">
-      <button className="text-gray-500 hover:text-gray-700">&lt;</button>
-      <button className="w-8 h-8 bg-red-600 text-white rounded flex items-center justify-center font-bold">1</button>
-      <button className="w-8 h-8 bg-gray-200 text-gray-700 rounded flex items-center justify-center">2</button>
-      <button className="w-8 h-8 bg-gray-200 text-gray-700 rounded flex items-center justify-center">3</button>
-      <button className="text-gray-500 hover:text-gray-700">&gt;</button>
+    <div className="flex items-center justify-center gap-2 mt-8">
+      {/* Nút Previous */}
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className={`p-2 rounded-lg transition ${
+          currentPage === 1 
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+            : 'bg-white hover:bg-gray-100 text-gray-700'
+        }`}
+      >
+        <ChevronLeft className="w-5 h-5" />
+      </button>
+
+      {/* Các trang */}
+      {pages.map(page => (
+        <button
+          key={page}
+          onClick={() => onPageChange(page)}
+          className={`w-10 h-10 rounded-lg font-medium transition ${
+            page === currentPage
+              ? 'bg-blue-600 text-white'
+              : 'bg-white hover:bg-gray-100 text-gray-700'
+          }`}
+        >
+          {page}
+        </button>
+      ))}
+
+      {/* Nút Next */}
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className={`p-2 rounded-lg transition ${
+          currentPage === totalPages
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'bg-white hover:bg-gray-100 text-gray-700'
+        }`}
+      >
+        <ChevronRight className="w-5 h-5" />
+      </button>
     </div>
   );
 };

@@ -22,6 +22,7 @@ import QuizExam from './pages/QuizExam';
 import ExamResult from './pages/ExamResult';
 // === ADMIN ===
 import AdminDashboard from './pages/admin/AdminDashboard';
+import DocumentManager from './pages/admin/DocumentManager';
 import ManageCourses from './pages/admin/ManageCourses';
 import ManageUsers from './pages/admin/ManageUsers';
 import ManageCertificates from './pages/admin/ManageCertificates';
@@ -112,6 +113,9 @@ function App() {
 <Route path="/admin/exams/:examId/questions" element={<ExamQuestions />} />
 <Route path="/admin/certificates" element={<AdminCertificates />} />
 
+
+
+<Route path="/admin/documents" element={<DocumentManager />} />
 
 <Route path="/admin" element={<Dashboard />} />
 

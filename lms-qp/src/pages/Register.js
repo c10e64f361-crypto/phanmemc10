@@ -1,8 +1,11 @@
 // src/pages/Register.js
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // ← GIỮ useAuth
+import { useAuth } from '../context/AuthContext';
 import AuthLayout from '../components/AuthLayout';
+
+// DÙNG ENV CHO API URL
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const Register = () => {
   const [form, setForm] = useState({
@@ -15,7 +18,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { user, login } = useAuth(); // ← CHỈ DÙNG login, KHÔNG DÙNG register
+  const { user, login } = useAuth();
   const navigate = useNavigate();
 
   // TỰ ĐỘNG CHUYỂN NẾU ĐÃ LOGIN
@@ -51,7 +54,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/register', {
+      const res = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -70,10 +73,10 @@ const Register = () => {
         return;
       }
 
-      // DÙNG login() CỦA useAuth ĐỂ CẬP NHẬT USER + TOKEN
+      // ĐĂNG NHẬP TỰ ĐỘNG SAU KHI ĐĂNG KÝ
       login(data.user, data.token);
 
-      // Chuyển hướng
+      // CHUYỂN HƯỚNG THEO VAI TRÒ
       if (data.user.role === 'Quản trị viên') {
         navigate('/admin');
       } else {

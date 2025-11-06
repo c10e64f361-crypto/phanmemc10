@@ -1,8 +1,10 @@
 // src/pages/Login.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import AuthLayout from '../components/AuthLayout';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const Login = () => {
   const [cccd, setCccd] = useState('');
@@ -14,7 +16,7 @@ const Login = () => {
   const navigate = useNavigate();
 
   // TỰ ĐỘNG CHUYỂN TRANG KHI user CÓ GIÁ TRỊ
-  React.useEffect(() => {
+  useEffect(() => {
     if (user) {
       const target = user.role === 'Quản trị viên' ? '/admin' : '/';
       navigate(target, { replace: true });
@@ -27,7 +29,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cccd, password })
@@ -41,7 +43,6 @@ const Login = () => {
         return;
       }
 
-      // DÙNG login() → CẬP NHẬT CONTEXT → Header + useEffect tự động chạy
       login(data.user, data.token);
 
     } catch (err) {

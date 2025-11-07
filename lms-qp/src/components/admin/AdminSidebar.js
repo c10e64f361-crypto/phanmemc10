@@ -3,7 +3,7 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Home, BookOpen, FileText, Users, BarChart3, Award, Settings, 
-  FileQuestion, FileSpreadsheet, LogOut 
+  FileQuestion, FileSpreadsheet, LogOut, FolderOpen 
 } from 'lucide-react';
 
 const AdminSidebar = () => {
@@ -14,8 +14,12 @@ const AdminSidebar = () => {
     { icon: Home, label: 'Dashboard', path: '/admin' },
     { icon: BookOpen, label: 'Khóa học', path: '/admin/courses' },
     { icon: FileText, label: 'Kỳ thi', path: '/admin/exams' },
-    { icon: FileSpreadsheet, label: 'Tài liệu', path: '/admin/documents' }, // THAY "Lịch thi" → "Tài liệu"
+    { icon: FileSpreadsheet, label: 'Tài liệu', path: '/admin/documents' },
     { icon: FileQuestion, label: 'Ngân hàng câu hỏi', path: '/admin/question-bank' },
+    
+    // THÊM MỤC DANH MỤC
+    { icon: FolderOpen, label: 'Danh mục', path: '/admin/categories' },
+
     { icon: Users, label: 'Học viên', path: '/admin/users' },
     { icon: BarChart3, label: 'Báo cáo', path: '/admin/reports' },
     { icon: Award, label: 'Chứng chỉ', path: '/admin/certificates' },
@@ -33,7 +37,7 @@ const AdminSidebar = () => {
   return (
     <div className="w-64 bg-blue-900 text-white min-h-screen p-4 fixed left-0 top-0 bottom-0 overflow-y-auto">
       <div className="mb-8">
-        <h2 className="text-xl font-bold text-center">LMS hỌC TẬP</h2>
+        <h2 className="text-xl font-bold text-center">LMS HỌC TẬP</h2>
       </div>
       <nav className="space-y-1">
         {menuItems.map((item) => {

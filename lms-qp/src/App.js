@@ -20,6 +20,11 @@ import ExamDetail from './pages/ExamDetail';
 import ExamStart from './pages/ExamStart';
 import QuizExam from './pages/QuizExam';
 import ExamResult from './pages/ExamResult';
+// App.js
+import Categories from './pages/admin/Categories';
+
+// Trong <Routes>
+
 // === ADMIN ===
 import AdminDashboard from './pages/admin/AdminDashboard';
 import DocumentManager from './pages/admin/DocumentManager';
@@ -39,6 +44,7 @@ import Dashboard from './pages/admin/Dashboard';
 import AdminLayout from './layouts/AdminLayout';
 import EditCourse from './pages/admin/EditCourse';
 import UserDetail from './pages/admin/UserDetail';
+import ExamEdit from './pages/admin/ExamEdit';
 // App.js
 import AdminCertificates from './pages/admin/AdminCertificates';
 
@@ -112,8 +118,9 @@ function App() {
 <Route path="/admin/courses/:id/chapters" element={<CourseChapters />} />
 <Route path="/admin/exams/:examId/questions" element={<ExamQuestions />} />
 <Route path="/admin/certificates" element={<AdminCertificates />} />
+<Route path="/admin/categories" element={<Categories />} />
 
-
+<Route path="/admin/exams/:id/edit" element={<ExamEdit />} />
 
 <Route path="/admin/documents" element={<DocumentManager />} />
 

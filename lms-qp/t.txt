@@ -1,0 +1,224 @@
+
+```markdown
+## DỰ ÁN: HỆ THỐNG QUẢN LÝ HỌC TẬP (LMS) – FULLSTACK
+### MỤC TIÊU
+- **Học viên**: Thi, xem kết quả, lọc kỳ thi
+- **Admin**: CRUD khóa học, kỳ thi, câu hỏi, ngân hàng câu hỏi
+- **Bảo mật**: Ẩn đáp án khi thi, chỉ hiển thị sau nộp
+- **Tính năng chính**:
+  - Phân trang
+  - Bộ lọc kỳ thi (trạng thái, thời gian, tìm kiếm)
+  - Quản lý ngân hàng câu hỏi (thêm/sửa/xóa)
+  - Tự động sinh mã khóa học
+---
+## CẤU TRÚC THƯ MỤC
+```
+lms-project/
+├── backend/
+│ ├── config/
+│ │ └── db.js
+│ ├── controllers/
+│ │ ├── authController.js
+│ │ ├── courseController.js
+│ │ ├── examController.js
+│ │ ├── examQuestionController.js
+│ │ ├── examResultController.js
+│ │ └── questionBankController.js
+│ ├── middleware/
+│ │ ├── authMiddleware.js
+│ │ └── adminMiddleware.js
+│ ├── models/
+│ │ ├── User.js
+│ │ ├── Course.js
+│ │ ├── Exam.js
+│ │ ├── ExamQuestion.js
+│ │ ├── ExamResult.js
+│ │ └── QuestionBank.js
+│ ├── routes/
+│ │ ├── authRoutes.js
+│ │ ├── courseRoutes.js
+│ │ ├── examRoutes.js
+│ │ ├── examQuestionRoutes.js
+│ │ ├── examResultRoutes.js
+│ │ └── questionBankRoutes.js
+│ ├── uploads/
+│ ├── videos/
+│ ├── .env
+│ └── server.js
+│
+├── frontend/
+│ ├── src/
+│ │ ├── components/
+│ │ │ ├── Header.js
+│ │ │ ├── Footer.js
+│ │ │ ├── CourseSidebar.js
+│ │ │ └── ExamSidebar.js
+│ │ ├── pages/
+│ │ │ ├── user/
+│ │ │ │ ├── Courses.js
+│ │ │ │ ├── Exams.js
+│ │ │ │ ├── TakeExam.js
+│ │ │ │ └── ExamResult.js
+│ │ │ └── admin/
+│ │ │ ├── CoursesList.js
+│ │ │ ├── CreateCourse.js
+│ │ │ ├── ExamList.js
+│ │ │ ├── ExamQuestions.js
+│ │ │ └── QuestionBank.js
+│ │ ├── App.js
+│ │ └── index.js
+│ └── package.json
+│
+└── database/
+    └── lms_quocphong.sql
+```
+---
+## CƠ SỞ DỮ LIỆU (MySQL)
+```sql
+-- database/lms_quocphong.sql
+CREATE DATABASE IF NOT EXISTS lms_quocphong;
+USE lms_quocphong;
+-- BẢNG exams
+CREATE TABLE exams (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  start_time DATETIME NOT NULL,
+  end_time DATETIME NOT NULL,
+  duration INT NOT NULL,
+  max_attempts INT DEFAULT 1,
+  scoring_method ENUM('Cao nhất', 'Trung bình') DEFAULT 'Cao nhất',
+  status ENUM('Chưa mở', 'Đang mở', 'Đã kết thúc') DEFAULT 'Chưa mở',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+-- BẢNG exam_questions
+CREATE TABLE exam_questions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  exam_id INT,
+  question_text TEXT NOT NULL,
+  option_a VARCHAR(255) NOT NULL,
+  option_b VARCHAR(255) NOT NULL,
+  option_c VARCHAR(255) NOT NULL,
+  option_d VARCHAR(255) NOT NULL,
+  correct_answer ENUM('A', 'B', 'C', 'D') NOT NULL,
+  points INT DEFAULT 1,
+  FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE
+);
+-- BẢNG exam_results
+CREATE TABLE exam_results (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  exam_id INT,
+  user_id INT,
+  score INT,
+  correct_answers INT,
+  total_questions INT,
+  submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_user_exam (user_id, exam_id),
+  FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE
+);
+-- BẢNG question_bank
+CREATE TABLE question_bank (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  question_text TEXT NOT NULL,
+  option_a VARCHAR(255) NOT NULL,
+  option_b VARCHAR(255) NOT NULL,
+  option_c VARCHAR(255) NOT NULL,
+  option_d VARCHAR(255) NOT NULL,
+  correct_answer ENUM('A', 'B', 'C', 'D') NOT NULL,
+  category VARCHAR(100) DEFAULT 'Chung',
+  difficulty ENUM('Dễ', 'Trung bình', 'Khó') DEFAULT 'Trung bình',
+  points INT DEFAULT 1
+);
+-- BẢNG courses
+CREATE TABLE courses (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(20) UNIQUE,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  instructor VARCHAR(100),
+  duration INT,
+  level ENUM('Cơ bản', 'Nâng cao', 'Chuyên sâu') DEFAULT 'Cơ bản',
+  start_date DATE,
+  end_date DATE,
+  price DECIMAL(10,2) DEFAULT 0,
+  category_id INT,
+  tag VARCHAR(255),
+  thumbnail VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+-- BẢNG categories
+CREATE TABLE categories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(100) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+---
+## BACKEND (Node.js + Express)
+### `server.js`
+```js
+// server.js
+const express = require('express');
+const cors = require('cors');
+const app = express();
+app.use(cors());
+app.use(express.json());
+app.use('/uploads', express.static('uploads'));
+// Routes
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/courses', require('./routes/courseRoutes'));
+app.use('/api/categories', require('./routes/categoryRoutes'));
+app.use('/api/exams', require('./routes/examRoutes'));
+app.use('/api/exams', require('./routes/examQuestionRoutes')); // mergeParams
+app.use('/api/exams', require('./routes/examResultRoutes'));
+app.use('/api/question-bank', require('./routes/questionBankRoutes'));
+const PORT = 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+```
+### `routes/examQuestionRoutes.js`
+```js
+// routes/examQuestionRoutes.js
+const router = express.Router({ mergeParams: true });
+router.get('/:examId/questions/student', auth, getForStudent);
+router.get('/:examId/questions/with-answers', auth, getWithAnswers);
+router.get('/:examId/questions', auth, admin, getForAdmin);
+module.exports = router;
+```
+---
+## FRONTEND (React)
+### `src/pages/user/Exams.js`
+- Phân trang 6/trang
+- Bộ lọc: tìm kiếm, trạng thái, thời gian
+- Gọi `/api/exams`
+### `src/pages/user/TakeExam.js`
+- Gọi `/questions/student` → **ẩn đáp án**
+### `src/pages/user/ExamResult.js`
+- Gọi `/questions/with-answers` → **hiển thị đáp án đúng/sai**
+### `src/pages/admin/QuestionBank.js`
+- Thêm/sửa/xóa câu hỏi
+- Tìm kiếm
+### `src/pages/admin/CreateCourse.js`
+- Tự động sinh mã khóa học (dựa trên danh mục)
+---
+## YÊU CẦU HIỆN TẠI
+> **Bạn đang cần**:
+> - Sửa lỗi 404
+> - Ẩn đáp án khi thi
+> - Hiển thị đáp án sau nộp
+> - Phân trang + bộ lọc kỳ thi
+> - Quản lý ngân hàng câu hỏi (thêm/sửa/xóa)
+> - Tự động sinh mã khóa học
+---
+**HÃY DÁN PROMPT NÀY VÀO CHAT MỚI ĐỂ TIẾP TỤC!**
+```
+---
+**DÁN VÀO CHAT MỚI → BẠN SẼ CÓ:**
+- Cấu trúc đầy đủ
+- Backend + Frontend + SQL
+- Không lỗi 404
+- Bảo mật đáp án
+- Phân trang + bộ lọc
+- Tự động sinh mã
+**Chỉ cần nói: "Tiếp tục từ đây" → Tôi sẽ hỗ trợ ngay!**

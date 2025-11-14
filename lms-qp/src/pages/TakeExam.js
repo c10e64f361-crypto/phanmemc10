@@ -10,13 +10,23 @@ const TakeExam = () => {
   const { examId } = useParams();
   const navigate = useNavigate();
   const [exam, setExam] = useState(null);
-  const [questions, setQuestions] = useState([]);
+  const [questions, setQuestions] = useState([]); // ← Câu hỏi đã trộn
   const [userAnswers, setUserAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+  // HÀM TRỘN NGẪU NHIÊN MẢNG
+  const shuffleArray = (array) => {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -25,18 +35,19 @@ const TakeExam = () => {
       return;
     }
 
-    // LẤY THÔNG TIN KỲ THI + KẾT QUẢ ĐÃ THI
     Promise.all([
       axios.get(`${API_URL}/api/exams/${examId}`, { headers: { Authorization: `Bearer ${token}` } }),
       axios.get(`${API_URL}/api/exams/${examId}/results`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
-      axios.get(`${API_URL}/api/exams/${examId}/questions`, { headers: { Authorization: `Bearer ${token}` } })
+      axios.get(`${API_URL}/api/exams/${examId}/questions/student`, { headers: { Authorization: `Bearer ${token}` } })
     ])
     .then(([examRes, resultRes, questionsRes]) => {
       const examData = examRes.data.data;
       const resultData = resultRes?.data?.data;
-      const questionsData = questionsRes.data.data;
+      let questionsData = questionsRes.data.data || [];
 
-      // KIỂM TRA SỐ LẦN ĐÃ THI
+      // TRỘN NGẪU NHIÊN CÂU HỎI
+      questionsData = shuffleArray(questionsData);
+
       if (resultData && examData.max_attempts <= 1) {
         navigate(`/exams/${examId}/result`, { 
           state: { result: resultData, questions: questionsData, userAnswers: {} } 
@@ -45,8 +56,8 @@ const TakeExam = () => {
       }
 
       setExam(examData);
-      setQuestions(questionsData);
-      setTimeLeft(examData.duration * 60); // giây
+      setQuestions(questionsData); // ← ĐÃ TRỘN
+      setTimeLeft(examData.duration * 60);
       setLoading(false);
     })
     .catch(err => {
@@ -56,7 +67,6 @@ const TakeExam = () => {
     });
   }, [examId, navigate]);
 
-  // ĐẾM NGƯỢC
   useEffect(() => {
     if (timeLeft <= 0 || loading) return;
     const timer = setInterval(() => {
@@ -87,10 +97,16 @@ const TakeExam = () => {
         }))
       }, { headers: { Authorization: `Bearer ${token}` } });
 
+      // GỌI LẠI CÂU HỎI CÓ ĐÁP ÁN (KHÔNG CẦN TRỘN)
+      const questionsWithAnswers = await axios.get(
+        `${API_URL}/api/exams/${examId}/questions/with-answers`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
       navigate(`/exams/${examId}/result`, { 
         state: { 
           result: res.data.data, 
-          questions, 
+          questions: questionsWithAnswers.data.data, 
           userAnswers 
         } 
       });
@@ -135,7 +151,6 @@ const TakeExam = () => {
 
       <main className="flex-1 p-6">
         <div className="max-w-4xl mx-auto">
-          {/* HEADER */}
           <div className="flex justify-between items-center mb-6">
             <button
               onClick={() => navigate(-1)}
@@ -150,13 +165,11 @@ const TakeExam = () => {
             </div>
           </div>
 
-          {/* TIÊU ĐỀ */}
           <div className="bg-white rounded-xl shadow p-6 mb-6">
             <h1 className="text-2xl font-bold text-blue-900 mb-2">{exam.title}</h1>
             <p className="text-gray-600">Tổng cộng {questions.length} câu hỏi • {exam.duration} phút</p>
           </div>
 
-          {/* DANH SÁCH CÂU HỎI */}
           <div className="space-y-6">
             {questions.map((q, i) => (
               <div key={q.id} className="bg-white p-6 rounded-xl shadow">
@@ -192,7 +205,6 @@ const TakeExam = () => {
             ))}
           </div>
 
-          {/* NÚT NỘP BÀI */}
           <div className="mt-8 text-center">
             <button
               onClick={handleSubmit}

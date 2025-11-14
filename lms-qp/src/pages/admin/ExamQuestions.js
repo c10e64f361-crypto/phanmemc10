@@ -3,12 +3,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Plus,
-  Trash2,
-  ArrowLeft,
-  Search,
-  X,
-  Check,
+  Plus, Trash2, ArrowLeft, Search, X, Check,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 const ExamQuestions = () => {
@@ -19,24 +15,35 @@ const ExamQuestions = () => {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Ngân hàng câu hỏi
+  // Ngân hàng câu hỏi (trong modal)
   const [bankQuestions, setBankQuestions] = useState([]);
   const [selectedBankQuestions, setSelectedBankQuestions] = useState([]);
   const [showBankModal, setShowBankModal] = useState(false);
   const [searchBank, setSearchBank] = useState('');
   const [loadingBank, setLoadingBank] = useState(false);
 
+  // PHÂN TRANG CHO MODAL
+  const [bankPagination, setBankPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
+  });
+
   // Form nhập tay
   const [form, setForm] = useState({
     question_text: '',
-    option_a: '',
-    option_b: '',
-    option_c: '',
-    option_d: '',
+    option_a: '', option_b: '', option_c: '', option_d: '',
     correct_answer: 'A',
   });
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+  // HÀM LOẠI BỎ "Câu X:" THỪA
+  const cleanQuestionText = (text) => {
+    if (!text) return '';
+    return text.replace(/^Câu \d+:\s*/i, '').trim();
+  };
 
   // LẤY CÂU HỎI HIỆN TẠI CỦA KỲ THI
   useEffect(() => {
@@ -46,24 +53,37 @@ const ExamQuestions = () => {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        setQuestions(res.data.data);
+        setQuestions(res.data.data || []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, [examId]);
 
-  // LẤY NGÂN HÀNG CÂU HỎI
+  // LẤY NGÂN HÀNG CÂU HỎI + PHÂN TRANG
   const fetchBankQuestions = async () => {
     setLoadingBank(true);
     try {
       const token = localStorage.getItem('token');
       const res = await axios.get(`${API_URL}/api/question-bank`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: { search: searchBank },
+        params: { 
+          search: searchBank,
+          page: bankPagination.page,
+          limit: bankPagination.limit
+        },
       });
-      setBankQuestions(res.data.data);
+
+      const data = res.data?.data || [];
+      const pag = res.data?.pagination || { total: 0, totalPages: 1, page: 1, limit: 10 };
+
+      setBankQuestions(data);
+      setBankPagination(prev => ({
+        ...prev,
+        total: pag.total,
+        totalPages: pag.totalPages
+      }));
     } catch (err) {
-      console.error('Lỗi tải ngân hàng câu hỏi');
+      console.error('Lỗi tải ngân hàng câu hỏi:', err);
     } finally {
       setLoadingBank(false);
     }
@@ -71,7 +91,11 @@ const ExamQuestions = () => {
 
   useEffect(() => {
     if (showBankModal) fetchBankQuestions();
-  }, [showBankModal, searchBank]);
+  }, [showBankModal, searchBank, bankPagination.page]);
+
+  useEffect(() => {
+    setBankPagination(prev => ({ ...prev, page: 1 }));
+  }, [searchBank]);
 
   // NHẬP TAY
   const handleSubmit = async (e) => {
@@ -81,17 +105,11 @@ const ExamQuestions = () => {
       const res = await axios.post(
         `${API_URL}/api/exams/${examId}/questions`,
         form,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setQuestions([...questions, res.data.data]);
       setForm({
-        question_text: '',
-        option_a: '',
-        option_b: '',
-        option_c: '',
-        option_d: '',
+        question_text: '', option_a: '', option_b: '', option_c: '', option_d: '',
         correct_answer: 'A',
       });
     } catch (err) {
@@ -99,7 +117,7 @@ const ExamQuestions = () => {
     }
   };
 
-  // THÊM TỪ NGÂN HÀNG
+  // THÊM TỪ NGÂN HÀNG (LOẠI BỎ "Câu X:")
   const handleAddFromBank = async () => {
     if (selectedBankQuestions.length === 0) return;
 
@@ -109,16 +127,14 @@ const ExamQuestions = () => {
         return axios.post(
           `${API_URL}/api/exams/${examId}/questions`,
           {
-            question_text: q.question_text,
+            question_text: cleanQuestionText(q.question_text), // ← LOẠI BỎ Câu X:
             option_a: q.option_a,
             option_b: q.option_b,
             option_c: q.option_c,
             option_d: q.option_d,
             correct_answer: q.correct_answer,
           },
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
       });
 
@@ -128,12 +144,7 @@ const ExamQuestions = () => {
       setSelectedBankQuestions([]);
       setShowBankModal(false);
     } catch (err) {
-      console.error('Lỗi thêm từ ngân hàng:', err.response?.data || err);
-      alert(
-        `Thêm câu hỏi thất bại: ${
-          err.response?.data?.message || 'Lỗi server'
-        }`
-      );
+      alert(`Thêm thất bại: ${err.response?.data?.message || 'Lỗi server'}`);
     }
   };
 
@@ -147,7 +158,7 @@ const ExamQuestions = () => {
     setQuestions(questions.filter((q) => q.id !== id));
   };
 
-  // CHỌN CÂU HỎI TRONG MODAL
+  // CHỌN CÂU HỎI
   const toggleSelect = (question) => {
     setSelectedBankQuestions((prev) =>
       prev.some((q) => q.id === question.id)
@@ -156,33 +167,76 @@ const ExamQuestions = () => {
     );
   };
 
-  if (loading)
-    return <div className="text-center py-8">Đang tải...</div>;
+  // CHUYỂN TRANG TRONG MODAL
+  const goToBankPage = (page) => {
+    if (page >= 1 && page <= bankPagination.totalPages && page !== bankPagination.page) {
+      setBankPagination(prev => ({ ...prev, page }));
+    }
+  };
+
+  // TẠO DANH SÁCH NÚT TRANG (THÔNG MINH)
+  const renderBankPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 7;
+    const half = Math.floor(maxVisible / 2);
+    let start = Math.max(1, bankPagination.page - half);
+    let end = Math.min(bankPagination.totalPages, start + maxVisible - 1);
+
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+
+    if (start > 1) {
+      pages.push(
+        <button key={1} onClick={() => goToBankPage(1)} className="px-3 py-1 rounded text-sm font-medium bg-white border hover:bg-gray-50">
+          1
+        </button>
+      );
+      if (start > 2) pages.push(<span key="s-ell" className="px-2 text-gray-500">...</span>);
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => goToBankPage(i)}
+          className={`px-3 py-1 rounded text-sm font-medium transition ${
+            bankPagination.page === i ? 'bg-blue-600 text-white' : 'bg-white border hover:bg-gray-50'
+          }`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    if (end < bankPagination.totalPages) {
+      if (end < bankPagination.totalPages - 1) pages.push(<span key="e-ell" className="px-2 text-gray-500">...</span>);
+      pages.push(
+        <button key={bankPagination.totalPages} onClick={() => goToBankPage(bankPagination.totalPages)} className="px-3 py-1 rounded text-sm font-medium bg-white border hover:bg-gray-50">
+          {bankPagination.totalPages}
+        </button>
+      );
+    }
+
+    return pages;
+  };
+
+  if (loading) return <div className="text-center py-8">Đang tải...</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-5xl mx-auto">
         {/* NÚT QUAY LẠI */}
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-6"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Quay lại danh sách kỳ thi
+        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-6">
+          <ArrowLeft className="w-5 h-5" /> Quay lại
         </button>
 
-        <h1 className="text-2xl font-bold text-blue-900 mb-8">
-          Câu hỏi kỳ thi
-        </h1>
+        <h1 className="text-2xl font-bold text-blue-900 mb-8">Câu hỏi kỳ thi</h1>
 
         {/* NÚT CHỌN TỪ NGÂN HÀNG */}
         <div className="flex gap-4 mb-8">
-          <button
-            onClick={() => setShowBankModal(true)}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2"
-          >
-            <Plus className="w-5 h-5" />
-            Chọn từ ngân hàng câu hỏi
+          <button onClick={() => setShowBankModal(true)} className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2">
+            <Plus className="w-5 h-5" /> Chọn từ ngân hàng
           </button>
         </div>
 
@@ -190,93 +244,43 @@ const ExamQuestions = () => {
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
           <h2 className="text-lg font-bold mb-4">Nhập tay câu hỏi mới</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <textarea
-              placeholder="Nội dung câu hỏi"
-              value={form.question_text}
-              onChange={(e) =>
-                setForm({ ...form, question_text: e.target.value })
-              }
-              className="w-full p-3 border rounded-lg"
-              rows="3"
-              required
-            />
-
+            <textarea placeholder="Nội dung câu hỏi" value={form.question_text} onChange={(e) => setForm({ ...form, question_text: e.target.value })} className="w-full p-3 border rounded-lg" rows="3" required />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {['a', 'b', 'c', 'd'].map((opt) => (
                 <div key={opt}>
                   <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="correct"
-                      value={opt.toUpperCase()}
-                      checked={form.correct_answer === opt.toUpperCase()}
-                      onChange={(e) =>
-                        setForm({ ...form, correct_answer: e.target.value })
-                      }
-                      className="w-4 h-4"
-                    />
-                    <input
-                      type="text"
-                      placeholder={`Đáp án ${opt.toUpperCase()}`}
-                      value={form[`option_${opt}`]}
-                      onChange={(e) =>
-                        setForm({ ...form, [`option_${opt}`]: e.target.value })
-                      }
-                      className="flex-1 p-2 border rounded"
-                      required
-                    />
+                    <input type="radio" name="correct" value={opt.toUpperCase()} checked={form.correct_answer === opt.toUpperCase()} onChange={(e) => setForm({ ...form, correct_answer: e.target.value })} className="w-4 h-4" />
+                    <input type="text" placeholder={`Đáp án ${opt.toUpperCase()}`} value={form[`option_${opt}`]} onChange={(e) => setForm({ ...form, [`option_${opt}`]: e.target.value })} className="flex-1 p-2 border rounded" required />
                   </label>
                 </div>
               ))}
             </div>
-
-            <button
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Thêm câu hỏi
+            <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Thêm câu hỏi
             </button>
           </form>
         </div>
 
         {/* DANH SÁCH CÂU HỎI */}
         <div className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-lg font-bold mb-4">
-            Danh sách câu hỏi ({questions.length})
-          </h2>
+          <h2 className="text-lg font-bold mb-4">Danh sách câu hỏi ({questions.length})</h2>
           {questions.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">
-              Chưa có câu hỏi nào
-            </p>
+            <p className="text-gray-500 text-center py-8">Chưa có câu hỏi nào</p>
           ) : (
             <div className="space-y-4">
               {questions.map((q, i) => (
-                <div
-                  key={q.id}
-                  className="border rounded-lg p-4 hover:shadow transition"
-                >
+                <div key={q.id} className="border rounded-lg p-4 hover:shadow transition">
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="font-medium">
-                      Câu {i + 1}: {q.question_text}
+                      Câu {i + 1}: {cleanQuestionText(q.question_text)}
                     </h4>
-                    <button
-                      onClick={() => handleDelete(q.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
+                    <button onClick={() => handleDelete(q.id)} className="text-red-600 hover:text-red-800">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     {['a', 'b', 'c', 'd'].map((opt) => (
-                      <div
-                        key={opt}
-                        className={`p-2 rounded ${
-                          q.correct_answer === opt.toUpperCase()
-                            ? 'bg-green-100 text-green-800 font-medium'
-                            : 'bg-gray-50'
-                        }`}
-                      >
+                      <div key={opt} className={`p-2 rounded ${q.correct_answer === opt.toUpperCase() ? 'bg-green-100 text-green-800 font-medium' : 'bg-gray-50'}`}>
                         {opt.toUpperCase()}. {q[`option_${opt}`]}
                       </div>
                     ))}
@@ -288,19 +292,14 @@ const ExamQuestions = () => {
         </div>
       </div>
 
-      {/* MODAL CHỌN TỪ NGÂN HÀNG */}
+      {/* MODAL CHỌN TỪ NGÂN HÀNG + PHÂN TRANG */}
       {showBankModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="p-6 border-b flex justify-between items-center">
-              <h2 className="text-xl font-bold">
-                Chọn câu hỏi từ ngân hàng
-              </h2>
-              <button
-                onClick={() => setShowBankModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
+              <h2 className="text-xl font-bold">Chọn câu hỏi từ ngân hàng</h2>
+              <button onClick={() => setShowBankModal(false)} className="text-gray-500 hover:text-gray-700">
                 <X className="w-6 h-6" />
               </button>
             </div>
@@ -319,19 +318,16 @@ const ExamQuestions = () => {
               </div>
             </div>
 
-            {/* Danh sách câu hỏi */}
-            <div className="flex-1 overflow-y-auto px-6">
+            {/* Danh sách + PHÂN TRANG */}
+            <div className="flex-1 overflow-y-auto px-6 pb-2">
               {loadingBank ? (
                 <div className="text-center py-8">Đang tải...</div>
               ) : bankQuestions.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  Không tìm thấy câu hỏi
-                </div>
+                <div className="text-center py-8 text-gray-500">Không tìm thấy</div>
               ) : (
                 <div className="space-y-4">
                   {bankQuestions.map((q) => {
                     const options = [q.option_a, q.option_b, q.option_c, q.option_d];
-
                     return (
                       <div
                         key={q.id}
@@ -343,52 +339,28 @@ const ExamQuestions = () => {
                         onClick={() => toggleSelect(q)}
                       >
                         <div className="flex items-start gap-3">
-                          {/* Checkbox */}
                           <div className="mt-1">
-                            {selectedBankQuestions.some(
-                              (sq) => sq.id === q.id
-                            ) ? (
+                            {selectedBankQuestions.some((sq) => sq.id === q.id) ? (
                               <Check className="w-5 h-5 text-blue-600" />
                             ) : (
                               <div className="w-5 h-5 border-2 border-gray-300 rounded"></div>
                             )}
                           </div>
-
-                          {/* Nội dung câu hỏi */}
                           <div className="flex-1">
                             <h4 className="font-semibold text-gray-900 mb-3">
-                              {q.question_text || 'Câu hỏi không có nội dung'}
+                              {cleanQuestionText(q.question_text)}
                             </h4>
-
-                            {/* 4 đáp án */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                               {['A', 'B', 'C', 'D'].map((label, idx) => (
-                                <div
-                                  key={label}
-                                  className={`p-2 rounded flex items-center gap-2 ${
-                                    q.correct_answer === label
-                                      ? 'bg-green-100 text-green-800 font-medium'
-                                      : 'bg-gray-50 text-gray-700'
-                                  }`}
-                                >
+                                <div key={label} className={`p-2 rounded flex items-center gap-2 ${q.correct_answer === label ? 'bg-green-100 text-green-800 font-medium' : 'bg-gray-50 text-gray-700'}`}>
                                   <span className="font-bold">{label}.</span>
                                   <span>{options[idx] || '(Trống)'}</span>
                                 </div>
                               ))}
                             </div>
-
-                            {/* Metadata */}
                             <div className="flex gap-4 text-xs text-gray-500 mt-3">
-                              <span>
-                                Chủ đề:{' '}
-                                <strong>{q.category || 'Không có'}</strong>
-                              </span>
-                              <span>
-                                Độ khó:{' '}
-                                <strong>
-                                  {q.difficulty || 'Trung bình'}
-                                </strong>
-                              </span>
+                              <span>Chủ đề: <strong>{q.category || 'Không có'}</strong></span>
+                              <span>Độ khó: <strong>{q.difficulty || 'Trung bình'}</strong></span>
                             </div>
                           </div>
                         </div>
@@ -399,20 +371,34 @@ const ExamQuestions = () => {
               )}
             </div>
 
+            {/* PHÂN TRANG TRONG MODAL */}
+            {bankPagination.totalPages > 1 && (
+              <div className="px-6 py-3 border-t flex justify-center items-center gap-2">
+                <button
+                  onClick={() => goToBankPage(bankPagination.page - 1)}
+                  disabled={bankPagination.page <= 1}
+                  className="p-2 rounded hover:bg-gray-100 disabled:opacity-50"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                {renderBankPageNumbers()}
+                <button
+                  onClick={() => goToBankPage(bankPagination.page + 1)}
+                  disabled={bankPagination.page >= bankPagination.totalPages}
+                  className="p-2 rounded hover:bg-gray-100 disabled:opacity-50"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+
             {/* Footer */}
             <div className="p-6 border-t flex justify-between items-center">
               <p className="text-sm text-gray-600">
-                Đã chọn:{' '}
-                <span className="font-bold text-blue-600">
-                  {selectedBankQuestions.length}
-                </span>{' '}
-                câu hỏi
+                Đã chọn: <span className="font-bold text-blue-600">{selectedBankQuestions.length}</span> câu hỏi
               </p>
               <div className="flex gap-3">
-                <button
-                  onClick={() => setShowBankModal(false)}
-                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
+                <button onClick={() => setShowBankModal(false)} className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
                   Hủy
                 </button>
                 <button
@@ -420,8 +406,7 @@ const ExamQuestions = () => {
                   disabled={selectedBankQuestions.length === 0}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  <Plus className="w-4 h-4" />
-                  Thêm vào kỳ thi
+                  <Plus className="w-4 h-4" /> Thêm vào kỳ thi
                 </button>
               </div>
             </div>

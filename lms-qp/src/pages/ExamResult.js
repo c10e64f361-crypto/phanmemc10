@@ -20,8 +20,8 @@ const ExamResult = () => {
   }
 
   const { result, questions, userAnswers } = state;
-  const correctCount = result.correct;
-  const total = result.total;
+  const correctCount = result.correct_answers || 0; // ĐÚNG TÊN
+  const totalQuestions = questions.length;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -48,7 +48,7 @@ const ExamResult = () => {
                 <p className="text-gray-600">Điểm số</p>
               </div>
               <div className="border-l pl-8">
-                <p className="text-5xl font-bold text-blue-600">{correctCount}/{total}</p>
+                <p className="text-5xl font-bold text-blue-600">{correctCount}/{totalQuestions}</p>
                 <p className="text-gray-600">Câu đúng</p>
               </div>
             </div>
@@ -63,9 +63,18 @@ const ExamResult = () => {
                 const isCorrect = q.correct_answer === userAns;
 
                 return (
-                  <div key={q.id} className={`border rounded-xl p-5 ${isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                  <div 
+                    key={q.id} 
+                    className={`border-2 rounded-xl p-5 transition-all ${
+                      isCorrect 
+                        ? 'border-green-300 bg-green-50' 
+                        : 'border-red-300 bg-red-50'
+                    }`}
+                  >
                     <div className="flex items-start justify-between mb-3">
-                      <h3 className="font-semibold">Câu {i + 1}: {q.question_text}</h3>
+                      <h3 className="font-semibold text-lg">
+                        Câu {i + 1}: {q.question_text}
+                      </h3>
                       {isCorrect ? (
                         <CheckCircle className="w-6 h-6 text-green-600" />
                       ) : (
@@ -73,25 +82,26 @@ const ExamResult = () => {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                       {['a', 'b', 'c', 'd'].map(opt => {
-                        const isUserAnswer = userAns === opt.toUpperCase();
-                        const isCorrectAnswer = q.correct_answer === opt.toUpperCase();
+                        const letter = opt.toUpperCase();
+                        const isUserAnswer = userAns === letter;
+                        const isCorrectAnswer = q.correct_answer === letter;
 
                         return (
                           <div
                             key={opt}
-                            className={`p-2 rounded-lg border ${
-                              isCorrectAnswer
-                                ? 'bg-green-100 border-green-400 font-medium'
-                                : isUserAnswer
-                                ? 'bg-red-100 border-red-400'
-                                : 'bg-gray-50 border-gray-300'
-                            }`}
+                            className={`p-3 rounded-lg border-2 font-medium transition-all
+                              ${isCorrectAnswer 
+                                ? 'border-green-500 bg-green-100 text-green-800' 
+                                : isUserAnswer 
+                                ? 'border-red-500 bg-red-100 text-red-800'
+                                : 'border-gray-300 bg-gray-50 text-gray-700'
+                              }`}
                           >
-                            <span className="font-medium">{opt.toUpperCase()}.</span> {q[`option_${opt}`]}
-                            {isUserAnswer && !isCorrectAnswer && <span className="ml-2 text-red-600">(Bạn chọn)</span>}
-                            {isCorrectAnswer && <span className="ml-2 text-green-600">(Đáp án đúng)</span>}
+                            <span className="font-bold">{letter}.</span> {q[`option_${opt}`]}
+                            {isCorrectAnswer && <span className="ml-2 text-xs">(Đáp án đúng)</span>}
+                            {isUserAnswer && !isCorrectAnswer && <span className="ml-2 text-xs">(Bạn chọn)</span>}
                           </div>
                         );
                       })}
